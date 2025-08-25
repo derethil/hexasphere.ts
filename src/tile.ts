@@ -1,5 +1,5 @@
-import Face from "./face";
-import Point from "./point";
+import { Face } from "./face";
+import { Point } from "./point";
 
 type vector3 = {
   x: number;
@@ -15,6 +15,8 @@ function vector(p1: Point, p2: Point) {
   };
 }
 
+type TileKeys = keyof Tile | (keyof Tile)[];
+
 // https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
 // Set Vector U to (Triangle.p2 minus Triangle.p1)
 // Set Vector V to (Triangle.p3 minus Triangle.p1)
@@ -25,7 +27,7 @@ export function calculateSurfaceNormal(p1: Point, p2: Point, p3: Point) {
   const U = vector(p1, p2);
   const V = vector(p1, p3);
 
-  let N = {
+  const N = {
     x: U.y * V.z - U.z * V.y,
     y: U.z * V.x - U.x * V.z,
     z: U.x * V.y - U.y * V.x,
@@ -39,7 +41,7 @@ export function pointingAwayFromOrigin(p: Point, v: vector3) {
 }
 
 export function normalizeVector(v: vector3) {
-  let m = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+  const m = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 
   return {
     x: v.x / m,
@@ -48,17 +50,15 @@ export function normalizeVector(v: vector3) {
   };
 }
 
-export default class Tile {
+export class Tile {
   centerPoint: Point;
   faces: Face[];
   neighborIds: string[];
   neighbors: Tile[];
   boundary: Point[];
 
-  constructor(centerPoint: Point, hexSize?: number) {
-    if (hexSize === undefined) {
-      hexSize = 1;
-    }
+  public constructor(centerPoint: Point, hexSize?: number) {
+    if (hexSize === undefined) hexSize = 1;
 
     this.centerPoint = centerPoint;
     this.faces = centerPoint.getOrderedFaces();
@@ -68,16 +68,17 @@ export default class Tile {
 
     hexSize = Math.max(0.01, Math.min(1.0, hexSize));
 
-    let neighborHash = {};
+    const neighborHash: Record<string, number> = {};
     for (let f = 0; f < this.faces.length; f++) {
       // build boundary
-      this.boundary.push(this.faces[f].getCentroid().segment(this.centerPoint, hexSize));
+      this.boundary.push(
+        this.faces[f].getCentroid().segment(this.centerPoint, hexSize),
+      );
 
       // get neighboring tiles
-      let otherPoints = this.faces[f].getOtherPoints(this.centerPoint);
+      const otherPoints = this.faces[f].getOtherPoints(this.centerPoint);
       for (let o = 0; o < 2; o++) {
-        // @ts-ignore
-        neighborHash[otherPoints[o]] = 1;
+        neighborHash[otherPoints[o].toString()] = 1;
       }
     }
 
@@ -87,10 +88,10 @@ export default class Tile {
     // Fix this.  Should be a better way of handling it
     // than flipping them around afterwards
 
-    let normal = calculateSurfaceNormal(
+    const normal = calculateSurfaceNormal(
       this.boundary[1],
       this.boundary[2],
-      this.boundary[3]
+      this.boundary[3],
     );
 
     if (!pointingAwayFromOrigin(this.centerPoint, normal)) {
@@ -98,46 +99,62 @@ export default class Tile {
     }
   }
 
-  getLatLon = function (this: Tile, radius: number, boundaryNum: number) {
+  public getLatLon(this: Tile, radius: number, boundaryNum?: number) {
     let point = this.centerPoint;
     if (typeof boundaryNum === "number" && boundaryNum < this.boundary.length) {
       point = this.boundary[boundaryNum];
     }
-    let phi = Math.acos(point.y / radius); //lat
-    let theta =
-      ((Math.atan2(point.x, point.z) + Math.PI + Math.PI / 2) % (Math.PI * 2)) - Math.PI; // lon
+    const phi = Math.acos(point.y / radius); //lat
+    const theta =
+      ((Math.atan2(point.x, point.z) + Math.PI + Math.PI / 2) % (Math.PI * 2)) -
+      Math.PI; // lon
 
     // theta is a hack, since I want to rotate by Math.PI/2 to start.  sorryyyyyyyyyyy
     return {
-      lat: (180 * phi) / Math.PI - 90,
-      lon: (180 * theta) / Math.PI,
+      latitude: (180 * phi) / Math.PI - 90,
+      longitude: (180 * theta) / Math.PI,
     };
-  };
+  }
 
-  scaledBoundary = function (this: Tile, scale: number) {
+  public scaledBoundary(this: Tile, scale: number) {
     scale = Math.max(0, Math.min(1, scale));
 
-    let ret = [] as Point[];
+    const ret: Point[] = [];
     for (let i = 0; i < this.boundary.length; i++) {
       ret.push(this.centerPoint.segment(this.boundary[i], 1 - scale));
     }
 
     return ret;
-  };
+  }
 
-  toJson = function (this: Tile) {
-    // this.centerPoint = centerPoint;
-    // this.faces = centerPoint.getOrderedFaces();
-    // this.boundary = [];
+  public toJson(this: Tile) {
     return {
       centerPoint: this.centerPoint.toJson(),
       boundary: this.boundary.map(function (point) {
         return point.toJson();
       }),
     };
-  };
+  }
 
-  toString = function (this: Tile) {
+  public toString(this: Tile) {
     return this.centerPoint.toString();
-  };
+  }
+
+  public checkExists(this: Tile, keys: TileKeys, methodName?: string) {
+    const checkKey = (key: keyof Tile) => {
+      if (!this[key]) {
+        throw new Error(
+          `${methodName} assumed computed ${key} for tile: ${this}, instead got ${
+            this[key]
+          }`,
+        );
+      }
+    };
+
+    if (typeof keys === "string") {
+      checkKey(keys);
+    } else {
+      keys.forEach((key) => checkKey(key));
+    }
+  }
 }
