@@ -1,0 +1,43 @@
+{
+  "name": "hexasphere",
+  "version": "1.0.0",
+  "description": "A TypeScript library for generating hexagonal sphere subdivisions (geodesic polyhedron)",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "hexasphere",
+    "geodesic",
+    "polyhedron",
+    "sphere",
+    "3d",
+    "geometry",
+    "mesh",
+    "subdivision",
+    "typescript"
+  ],
+  "author": "Jaren Glenn jarenglenn@gmail.com",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/derethil/hexasphere.ts"
+  },
+  "bugs": {
+    "url": "https://github.com/derethil/hexasphere.ts/issues"
+  },
+  "homepage": "https://github.com/derethil/hexasphere.ts",
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
