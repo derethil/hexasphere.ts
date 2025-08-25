@@ -1,6 +1,6 @@
 {
   "name": "hexasphere",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A TypeScript library for generating hexagonal sphere subdivisions (geodesic polyhedron)",
   "main": "dist/index.js",
   "module": "dist/index.js",
